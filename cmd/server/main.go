@@ -4,29 +4,38 @@ import (
 	"fmt"
 	"net/http"
 
+	"octopath-grimoire/internal/data"
+
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "GET index")
+type config struct {
+	Port          int
+	ItemsFilepath string
 }
 
-type Config struct {
-	Port int
+type application struct {
+	router *chi.Mux
+	models *data.Models
+	config *config
 }
 
 func main() {
-	cfg := &Config{
+	appCfg := &config{
 		Port: 8080,
 	}
 
-	router := chi.NewRouter()
+	modelsCfg := &data.ModelsConfig{
+		ItemsFilepath: "./assets/data/octopath_items.csv",
+	}
 
-	router.Use(middleware.Logger)
+	app := &application{
+		router: chi.NewRouter(),
+		models: data.LoadModels(modelsCfg),
+	}
 
-	router.Get("/", Index)
+	app.setupRoutes()
 
-	fmt.Printf("Serving on port %d\n", cfg.Port)
-	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), router)
+	fmt.Printf("Serving on port %d\n", appCfg.Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", appCfg.Port), app.router)
 }
