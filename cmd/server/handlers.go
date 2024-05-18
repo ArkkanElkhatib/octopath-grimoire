@@ -11,18 +11,39 @@ import (
 )
 
 func (app *application) getItems(w http.ResponseWriter, r *http.Request) {
-	var filter data.ItemFilter
-	filter = data.ItemFilter{
-		Query:       "",
-		QueryTarget: "",
-		Extension:   "",
-		Sort:        "-name",
-		Page:        1,
-		PageSize:    25,
+	queryValues := r.URL.Query()
+
+	querySearch := app.readQueryString(queryValues, "query", "")
+	var queryTarget string
+	if querySearch != "" {
+		queryTarget = app.readQueryString(queryValues, "target", "name")
+	} else {
+		queryTarget = app.readQueryString(queryValues, "target", "")
+	}
+	queryExtension := app.readQueryString(queryValues, "extension", "")
+
+	querySort := app.readQueryString(queryValues, "sort", "")
+	queryPage := app.readQueryStringAsInt(queryValues, "page", 1)
+	queryPageSize := app.readQueryStringAsInt(queryValues, "page_size", 25)
+	filter := data.Filter{
+		Query:       querySearch,
+		QueryTarget: queryTarget,
+		Extension:   queryExtension,
+		Sort:        querySort,
+		Page:        queryPage,
+		PageSize:    queryPageSize,
 	}
 
-	items := app.models.ItemModel.GetItems(filter)
-	data := envelope{"items": items, "filter": filter}
+	items, numResults := app.models.ItemModel.GetItems(filter)
+	metadata := data.Metadata{
+		Total:    numResults,
+		Returned: len(items),
+	}
+	data := envelope{
+		"metadata": metadata,
+		"items":    items,
+		"filter":   filter,
+	}
 
 	err := app.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
@@ -38,6 +59,12 @@ func (app *application) getItemID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	item := app.models.ItemModel.GetItem(intId)
+
+	if item.IsEmpty() {
+		app.writeJSON(w, http.StatusNotFound, envelope{"error": "item not found"}, nil)
+		return
+	}
+
 	data := envelope{
 		"item": item,
 	}
@@ -49,21 +76,43 @@ func (app *application) getItemID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) getEquipments(w http.ResponseWriter, r *http.Request) {
-	var filter data.EquipmentFilter
-	filter = data.EquipmentFilter{
-		Query:       "",
-		QueryTarget: "",
-		Extension:   "",
-		Sort:        "name",
-		Page:        1,
-		PageSize:    25,
+	queryValues := r.URL.Query()
+
+	querySearch := app.readQueryString(queryValues, "query", "")
+	var queryTarget string
+	if querySearch != "" {
+		queryTarget = app.readQueryString(queryValues, "target", "name")
+	} else {
+		queryTarget = app.readQueryString(queryValues, "target", "")
+	}
+	queryExtension := app.readQueryString(queryValues, "extension", "")
+
+	querySort := app.readQueryString(queryValues, "sort", "")
+	queryPage := app.readQueryStringAsInt(queryValues, "page", 1)
+	queryPageSize := app.readQueryStringAsInt(queryValues, "page_size", 25)
+	filter := data.Filter{
+		Query:       querySearch,
+		QueryTarget: queryTarget,
+		Extension:   queryExtension,
+		Sort:        querySort,
+		Page:        queryPage,
+		PageSize:    queryPageSize,
 	}
 
-	equipments := app.models.EquipmentModel.GetEquipments(filter)
-	data := envelope{"equipments": equipments, "filter": filter}
+	equipments, numResults := app.models.EquipmentModel.GetEquipments(filter)
+	metadata := data.Metadata{
+		Total:    numResults,
+		Returned: len(equipments),
+	}
+	data := envelope{
+		"metadata":   metadata,
+		"equipments": equipments,
+		"filter":     filter,
+	}
 
 	err := app.writeJSON(w, http.StatusOK, data, nil)
 	if err != nil {
+
 		app.writeJSON(w, http.StatusNotFound, envelope{"error": "could not write equipments"}, nil)
 	}
 }
@@ -76,6 +125,12 @@ func (app *application) getEquipmentId(w http.ResponseWriter, r *http.Request) {
 	}
 
 	equipment := app.models.EquipmentModel.GetEquipment(intId)
+
+	if equipment.IsEmpty() {
+		app.writeJSON(w, http.StatusNotFound, envelope{"error": "equipment not found"}, nil)
+		return
+	}
+
 	data := envelope{
 		"equipment": equipment,
 	}

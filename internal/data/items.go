@@ -7,15 +7,6 @@ import (
 	"strings"
 )
 
-type ItemFilter struct {
-	Query       string `json:"query,omitempty"`
-	QueryTarget string `json:"query_target,omitempty"`
-	Extension   string `json:"extension,omitempty"`
-	Sort        string `json:"sort,omitempty"`
-	Page        int    `json:"page_number"`
-	PageSize    int    `json:"page_size"`
-}
-
 type Item struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
@@ -29,11 +20,17 @@ type ItemModel struct {
 	items    []Item
 }
 
+var emptyItem = Item{}
+
+func (i Item) IsEmpty() bool {
+	return i == emptyItem
+}
+
 func (m *ItemModel) GetHeadings() []string {
 	return m.headings
 }
 
-func filterItems(items []Item, filter ItemFilter) []Item {
+func filterItems(items []Item, filter Filter) []Item {
 	query := strings.ToLower(filter.Query)
 	target := strings.ToLower(filter.QueryTarget)
 	extension := strings.ToLower(filter.Extension)
@@ -43,16 +40,20 @@ func filterItems(items []Item, filter ItemFilter) []Item {
 	var itemValueInt int
 	for _, item := range items {
 		switch target {
+		// string values
 		case "name":
 			itemValue = strings.ToLower(item.Name)
 		case "description":
 			itemValue = strings.ToLower(item.Description)
 		case "type":
 			itemValue = strings.ToLower(item.Type)
+
+		// int values
 		case "buy":
 			itemValueInt = item.Buy
 		case "sell":
 			itemValueInt = item.Sell
+
 		default:
 			itemValue = strings.ToLower(item.Name)
 		}
@@ -82,7 +83,7 @@ func filterItems(items []Item, filter ItemFilter) []Item {
 	return filteredItems
 }
 
-func sortItems(items []Item, filter ItemFilter) []Item {
+func sortItems(items []Item, filter Filter) []Item {
 	if len(filter.Sort) == 0 {
 		return items
 	}
@@ -119,12 +120,6 @@ func sortItems(items []Item, filter ItemFilter) []Item {
 			} else {
 				return itemsCopy[i].Description > itemsCopy[j].Description
 			}
-		case "type":
-			if asc {
-				return itemsCopy[i].Type < itemsCopy[j].Type
-			} else {
-				return itemsCopy[i].Type > itemsCopy[j].Type
-			}
 		case "buy":
 			if asc {
 				return itemsCopy[i].Buy < itemsCopy[j].Buy
@@ -137,14 +132,20 @@ func sortItems(items []Item, filter ItemFilter) []Item {
 			} else {
 				return itemsCopy[i].Sell > itemsCopy[j].Sell
 			}
+		case "type":
+			if asc {
+				return itemsCopy[i].Type < itemsCopy[j].Type
+			} else {
+				return itemsCopy[i].Type > itemsCopy[j].Type
+			}
+		default:
+			return false
 		}
-
-		return false
 	})
 	return itemsCopy
 }
 
-func paginateItems(items []Item, filter ItemFilter) []Item {
+func paginateItems(items []Item, filter Filter) []Item {
 	pageSize := filter.PageSize
 	page := filter.Page
 
@@ -164,15 +165,16 @@ func paginateItems(items []Item, filter ItemFilter) []Item {
 	return items
 }
 
-func (m *ItemModel) GetItems(filter ItemFilter) []Item {
-	retItems := paginateItems(sortItems(filterItems(m.items, filter), filter), filter)
+func (m *ItemModel) GetItems(filter Filter) ([]Item, int) {
+	filteredItems := filterItems(m.items, filter)
+	numResults := len(filteredItems)
 
-	return retItems
+	return paginateItems(sortItems(filteredItems, filter), filter), numResults
 }
 
 func (m *ItemModel) GetItem(index int) Item {
-	if index < len(m.items)-1 {
-		return m.items[index+1]
+	if 0 <= index && index <= len(m.items) {
+		return m.items[index-1]
 	}
 	return Item{}
 }
