@@ -1,20 +1,24 @@
 package data
 
 type ModelsConfig struct {
-	ItemsFilepath string
+	ItemsFilepath      string
+	EquipmentsFilepath string
 }
 
 type Models struct {
-	ItemsModel ItemsModel
+	ItemModel      ItemModel
+	EquipmentModel EquipmentModel
 }
 
 func LoadModels(cfg *ModelsConfig) *Models {
-	itemsModel, err := NewItemsModel(cfg.ItemsFilepath)
+	itemModel, err := NewItemModel(cfg.ItemsFilepath)
+	equipmentModel, err := NewEquipmentModel(cfg.EquipmentsFilepath)
 	if err != nil {
 		return &Models{}
 	}
 
 	return &Models{
-		ItemsModel: itemsModel,
+		ItemModel:      itemModel,
+		EquipmentModel: equipmentModel,
 	}
 }

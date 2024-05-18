@@ -33,17 +33,17 @@ func stringToCSV(s string) ([][]string, error) {
 }
 
 func readFile(filepath string) (string, error) {
-	b := make([]byte, 100_000)
-	f, err := os.Open(filepath)
+	buf := make([]byte, 100_000)
+	fd, err := os.Open(filepath)
 	if err != nil {
 		return "", err
 	}
 
-	n, err := f.Read(b)
+	numBytes, err := fd.Read(buf)
 	if err != nil {
 		return "", err
 	}
 
 	// string of bytes read in
-	return string(b[:n]), nil
+	return string(buf[:numBytes]), nil
 }

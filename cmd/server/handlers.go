@@ -16,12 +16,18 @@ func (app *application) getItems(w http.ResponseWriter, r *http.Request) {
 		Query:       "",
 		QueryTarget: "",
 		Extension:   "",
-		Sort:        "",
-		Page:        3,
-		PageSize:    200,
+		Sort:        "-name",
+		Page:        1,
+		PageSize:    25,
 	}
 
-	fmt.Fprintf(w, "%v + %d", app.models.ItemsModel.GetItems(filter), len(app.models.ItemsModel.GetItems(filter)))
+	items := app.models.ItemModel.GetItems(filter)
+	data := envelope{"items": items, "filter": filter}
+
+	err := app.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		app.writeJSON(w, http.StatusNotFound, envelope{"error": "could not write items"}, nil)
+	}
 }
 
 func (app *application) getItemID(w http.ResponseWriter, r *http.Request) {
@@ -31,5 +37,51 @@ func (app *application) getItemID(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "%s is not a valid integer ID", id)
 	}
 
-	fmt.Fprintf(w, "%v", app.models.ItemsModel.GetItem(intId))
+	item := app.models.ItemModel.GetItem(intId)
+	data := envelope{
+		"item": item,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		app.writeJSON(w, http.StatusNotFound, envelope{"error": "item not found"}, nil)
+	}
+}
+
+func (app *application) getEquipments(w http.ResponseWriter, r *http.Request) {
+	var filter data.EquipmentFilter
+	filter = data.EquipmentFilter{
+		Query:       "",
+		QueryTarget: "",
+		Extension:   "",
+		Sort:        "name",
+		Page:        1,
+		PageSize:    25,
+	}
+
+	equipments := app.models.EquipmentModel.GetEquipments(filter)
+	data := envelope{"equipments": equipments, "filter": filter}
+
+	err := app.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		app.writeJSON(w, http.StatusNotFound, envelope{"error": "could not write equipments"}, nil)
+	}
+}
+
+func (app *application) getEquipmentId(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "equipmentID")
+	intId, err := strconv.Atoi(id)
+	if err != nil {
+		fmt.Fprintf(w, "%s is not a valid integer ID", id)
+	}
+
+	equipment := app.models.EquipmentModel.GetEquipment(intId)
+	data := envelope{
+		"equipment": equipment,
+	}
+
+	err = app.writeJSON(w, http.StatusOK, data, nil)
+	if err != nil {
+		app.writeJSON(w, http.StatusNotFound, envelope{"error": "equipment not found"}, nil)
+	}
 }

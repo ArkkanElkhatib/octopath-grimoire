@@ -26,7 +26,8 @@ func main() {
 	}
 
 	modelsCfg := &data.ModelsConfig{
-		ItemsFilepath: "./assets/data/octopath_items.csv",
+		ItemsFilepath:      "./assets/data/octopath_items.csv",
+		EquipmentsFilepath: "./assets/data/octopath_equipment.csv",
 	}
 
 	app := &application{
