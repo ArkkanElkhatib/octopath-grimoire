@@ -1,11 +1,11 @@
 run: build
-	@echo 'Running server...'
-	@./bin/server
+	@echo 'Running API server...'
+	@./bin/api
 
 build:
 	@echo 'Building binaries...'
-	@go build -o ./bin/server ./cmd/server
+	@go build -o ./bin/api /cmd/api
 
 clean:
 	@echo 'Removing binaries...'
-	@rm ./bin/server
+	@rm ./bin/api
